@@ -6,9 +6,11 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 import { Role } from '../role.enum';
 import { Wallet } from 'src/wallet/entities/wallet.entity';
+import { History } from 'src/history/entities/history.entity';
 
 @Entity()
 export class User {
@@ -37,6 +39,9 @@ export class User {
   //cüzdanla ilişkilendirme
   @OneToOne(() => Wallet, (wallet) => wallet.user)
   wallet: Wallet;
+
+  @OneToMany(() => History, (history) => history.user)
+  history: History[];
 
   @CreateDateColumn()
   created_at: Date;
