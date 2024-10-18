@@ -1,0 +1,51 @@
+ Bir monolith backend api yapıcaz
+User - Product - Wallet - History tabloları olsun
+ 
+User -> id, name, surname, email (unique) , password, role('ADMIN','USER') iki role olsa yeterli
+Wallet -> id, userId ( bu bir relationship olmalı), balance 
+Product -> id, name, price, stock(number)
+History -> id, date, from(olayın hangi servis üzerinde gerçekleştiği), details (json yada string format olabilir sen karar ver) 
+ 
+user ve history tablosu relations olmalı nasıl olacağını hikayeye göre sen düşün 
+user ve wallet aynı şekilde one to one olmalı 
+ 
+Hikayemiz 
+ 
+Bir basit e-ticaret sitesi gibi düşünebilirsin
+Burada jwt token kullanmanı token içerisindeki payload kısmına user ve kullanıcının cüzdan bilgilerini koymanı istiyorum 
+ 
+Yapacağın apiler
+POST /user/register -> kullanıcı kayıt
+POST /user/login -> kullanıcı login
+GET /user/  -> tüm kullanıcı listesini dönecek sadece 'ADMIN' ise
+GET /user/:id -> kullanıcı id'ye göre aratma 
+PUT /user/ -> user update
+PUT /user/password -> user password update
+DELETE /user/:id -> sadece admin ise silebilecek
+GET /user/?query=ahmet -> ahmet ismindeki kullanıcıları listeliyecek ve iki pagination parametresi eklemeni istiyorum isimlerini sen karar ver başlangıç ve bitiş olacak şekilde istediğim aralıktaki kullanıcıları listeliyeceğim örnek 1-5 arasndaki 5 kayıt
+ 
+Wallet
+GET /wallet/ -> sadece ADMIN kullanabilmeli cüzdan datalarını user relations bilgileri ile çekmelisin 
+GET /wallet/:id -> id'ye göre listeleme yine ADMIN listelemeli USER role gelirse yetkiniz yok şeklinde response dön 403 
+POST /wallet/ -> burda bakiye yüklemek için kullanacağız userId bilgisine göre userId, balance sadece yüklenen bakiye mevcut olana eklenmeli 
+ 
+ 
+Product
+ 
+GET /product/ -> Tüm product listesini tüm kullanıcılar görebilmeli 
+POST /product/ -> Burada yeni product yaratacağız Örnek - name: Apple 15, price: 500, stock: 20 
+POST /product/buy/:productId -> Burada kullanıcı almak istediği ürünün bilgileri ile ürünü satın alacaksın balance bilgisi hali hazırda token içerisinde olacağı için gidip tekrar bilgiyi database içerisinden çekmene gerek yok
+bakacaksın kullanıcı almak istediği ürün adeti ve fiyatı kadar cüzdanında bakiye varsa bunu onaylayıp satışı gerçekleştirecek gerekli biglileri database içerisinde update edeceksin product ve wallet kısmında 
+ 
+ 
+History 
+GET /history/ -> bu tüm operasyonları listeliyecek bir log database olarak düşün burada listeyi göreceğiz
+burada query parametre olarak userId, aratabilmeli ve bu user'ın hangi işlemleri gerçekleştirdiğini görmeliyiz
+ 
+bu kısımda veriyi nasıl oluşturacaksın şu şekilde 
+Kullanıcı cüzdana bakiye yükledi örnek olarak  POST /wallet/  istek attığında bakiye yükleme işleminin ardından bu tablo içerisinde kullanıcı şu saate 'WALLET' service içerisine bakiye yükleme gerçekleşti şeklinde bilgi tutacaksın
+aynı şekilde bir ürün aldığında bu olayıda bu tabloya kayıt edeceksin 
+hata oluştuğu durumlarda hatalarıda kayıt etmeni istiyorum
+ 
+Projeyi yaparken nest.js typeorm postgre yada mysql olabilir bunları kullanarak yaparsan iyi olur 
+validasyonlarını mutlaka dto tarafında halletmeni istiyorum
