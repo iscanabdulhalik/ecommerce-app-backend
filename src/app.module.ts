@@ -7,30 +7,23 @@ import { Wallet } from './wallet/entities/wallet.entity';
 import { History } from './history/entities/history.entity';
 import { Product } from './product/entities/product.entity';
 import { JwtModule } from '@nestjs/jwt';
-
-
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
-    JwtModule.register({ secret: '1234' }),
+    UserModule,
+    JwtModule.register({ secret: 'westerops' }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      database: 'iscan',
-      host: 'localhost',
       port: 5435,
-      username: "postgres",
-      password: "iscan",
-      entities: [
-        User,
-        Wallet,
-        Product,
-        History,
-      ],
-      synchronize: true, //make it false in production mode
-
+      host: 'localhost',
+      username: 'postgres',
+      password: 'iscan',
+      database: 'iscan',
+      entities: [User, Wallet, Product, History],
+      synchronize: true,
     }),
     TypeOrmModule.forFeature([User, Wallet, Product, History]),
-
   ],
   controllers: [AppController],
   providers: [AppService],
