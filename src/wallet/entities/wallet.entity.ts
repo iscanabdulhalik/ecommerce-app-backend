@@ -1,8 +1,9 @@
 import { User } from 'src/user/entities/user.entity';
-import { Column, PrimaryColumn, OneToOne } from 'typeorm';
+import { Column, PrimaryGeneratedColumn, OneToOne, Entity } from 'typeorm';
 
+@Entity()
 export class Wallet {
-  @PrimaryColumn({ generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()

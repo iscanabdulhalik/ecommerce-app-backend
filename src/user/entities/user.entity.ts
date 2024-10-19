@@ -3,18 +3,18 @@ import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
-  PrimaryColumn,
   UpdateDateColumn,
   OneToOne,
   OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Role } from '../role.enum';
+import { Role } from '../../common/enums/role.enum';
 import { Wallet } from 'src/wallet/entities/wallet.entity';
 import { History } from 'src/history/entities/history.entity';
 
 @Entity()
 export class User {
-  @PrimaryColumn({ generated: 'uuid' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
