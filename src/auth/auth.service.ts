@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User } from 'src/modules/user/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from 'src/common/types/jwtPayload';
 
 @Injectable()
-export class UserService {
+export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -50,28 +50,20 @@ export class UserService {
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
-      return user; // Kullanıcı doğruysa, kullanıcıyı döndür
+      return user;
     }
-    return null; // Şifre ya da email yanlışsa null döndür
+    return null;
   }
 
-  // Kullanıcı login olduğunda JWT token oluştur
   async login(user: User): Promise<any> {
-    const payload: JwtPayload = {
-      user: {
-        userId: user.id,
-        role: user.role,
-        email: user.email,
-      },
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
     };
-  }
-
-  //tüm kullanıcıları döndürür
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
   }
 }

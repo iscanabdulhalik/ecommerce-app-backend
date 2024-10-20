@@ -2,15 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './user/entities/user.entity';
-import { Wallet } from './wallet/entities/wallet.entity';
-import { History } from './history/entities/history.entity';
-import { Product } from './product/entities/product.entity';
+import { User } from 'src/modules/user/entities/user.entity';
+import { Wallet } from './modules/wallet/entities/wallet.entity';
+import { History } from './modules/history/entities/history.entity';
+import { Product } from './modules/product/entities/product.entity';
 import { JwtModule } from '@nestjs/jwt';
-import { UserModule } from './user/user.module';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     UserModule,
     JwtModule.register({ secret: 'westerops' }),
     TypeOrmModule.forRoot({
@@ -24,6 +26,7 @@ import { UserModule } from './user/user.module';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([User, Wallet, Product, History]),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
