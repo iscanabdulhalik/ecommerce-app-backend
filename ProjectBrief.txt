@@ -1,4 +1,4 @@
- Bir monolith backend api yapıcaz
+Bir monolith backend api yapıcaz
 User - Product - Wallet - History tabloları olsun
  
 User -> id, name, surname, email (unique) , password, role('ADMIN','USER') iki role olsa yeterli
@@ -49,3 +49,16 @@ hata oluştuğu durumlarda hatalarıda kayıt etmeni istiyorum
  
 Projeyi yaparken nest.js typeorm postgre yada mysql olabilir bunları kullanarak yaparsan iyi olur 
 validasyonlarını mutlaka dto tarafında halletmeni istiyorum
+
+
+
+
+ÖNCE AUTHU AYIR
+
+auth/login
+auth/register
+
+user.service.spec.ts
+user.controller.spec.ts
+
+üstteki dosyalar test içindi sildim test yazmayacağız

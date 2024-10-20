@@ -8,9 +8,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Role } from '../../common/enums/role.enum';
-import { Wallet } from 'src/wallet/entities/wallet.entity';
-import { History } from 'src/history/entities/history.entity';
+import { Role } from '../../../common/enums/role.enum';
+import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
+import { History } from 'src/modules/history/entities/history.entity';
 
 @Entity()
 export class User {
