@@ -9,11 +9,11 @@ export class RolesGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get<Role[]>('roles', context.getHandler());
     if (!roles) {
-      return false; // Eğer bir rol tanımlı değilse, geçişe izin verilmez
+      return false;
     }
     const request = context.switchToHttp().getRequest();
-    const user = request.user; // request.user ile kullanıcının rolünü alıyoruz
+    const user = request.user;
 
-    return roles.includes(user.role); // Kullanıcının rolü gerekli rollerde var mı diye kontrol ediyoruz
+    return roles.includes(user.role);
   }
 }
