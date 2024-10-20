@@ -20,7 +20,7 @@ POST /user/login -> kullanıcı login
 GET /user/  -> tüm kullanıcı listesini dönecek sadece 'ADMIN' ise
 GET /user/:id -> kullanıcı id'ye göre aratma 
 PUT /user/ -> user update
-PUT /user/password -> user password update
+PUT /user/password -> user password update    <<<------ ask
 DELETE /user/:id -> sadece admin ise silebilecek
 GET /user/?query=ahmet -> ahmet ismindeki kullanıcıları listeliyecek ve iki pagination parametresi eklemeni istiyorum isimlerini sen karar ver başlangıç ve bitiş olacak şekilde istediğim aralıktaki kullanıcıları listeliyeceğim örnek 1-5 arasndaki 5 kayıt
  
@@ -51,14 +51,3 @@ Projeyi yaparken nest.js typeorm postgre yada mysql olabilir bunları kullanarak
 validasyonlarını mutlaka dto tarafında halletmeni istiyorum
 
 
-
-
-ÖNCE AUTHU AYIR
-
-auth/login
-auth/register
-
-user.service.spec.ts
-user.controller.spec.ts
-
-üstteki dosyalar test içindi sildim test yazmayacağız

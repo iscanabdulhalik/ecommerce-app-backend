@@ -8,13 +8,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: 'westerops', // Aynı secret key burada kullanılıyor
+      secretOrKey: 'westerops',
     });
   }
 
-  // Token doğrulandıktan sonra payload'ı çözümleyerek kullanıcı bilgilerine erişiriz
   async validate(payload: any) {
-    // JWT payload içeriği: { sub: userId, email: userEmail, role: userRole }
     return { userId: payload.sub, email: payload.email, role: payload.role };
   }
 }

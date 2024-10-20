@@ -4,7 +4,7 @@ import { ProductController } from './product.controller';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [JwtModule.register({ secret: '1234' })],
+  imports: [JwtModule.register({ secret: 'westerops' })],
   controllers: [ProductController],
   providers: [ProductService],
 })
