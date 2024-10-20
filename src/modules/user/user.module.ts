@@ -5,11 +5,9 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]), // User entity'si burada typeorm modülüne ekleniyor
-  ],
+  imports: [TypeOrmModule.forFeature([User])],
   controllers: [UserController],
   providers: [UserService],
-  exports: [UserService], // Eğer başka modüllerde kullanacaksan UserService'i export et
+  exports: [UserService],
 })
 export class UserModule {}
