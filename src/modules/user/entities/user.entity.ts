@@ -36,7 +36,6 @@ export class User {
   })
   role: Role;
 
-  //cüzdanla ilişkilendirme
   @OneToOne(() => Wallet, (wallet) => wallet.user)
   wallet: Wallet;
 
