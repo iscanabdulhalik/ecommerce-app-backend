@@ -13,7 +13,7 @@ export class History {
   from: string;
 
   @Column({ type: 'jsonb' })
-  details: Record<string, any>; // JSON formatinda veri saklamak icin
+  details: Record<string, any>;
 
   @ManyToOne(() => User, (user) => user.history, { onDelete: 'CASCADE' })
   user: User;

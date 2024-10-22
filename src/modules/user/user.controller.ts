@@ -7,6 +7,8 @@ import {
   Body,
   Req,
   Delete,
+  NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../../common/guards/jwt.auth.guard';
@@ -21,37 +23,40 @@ import { Request } from 'express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
   @Get()
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async getAllUsers() {
     return this.userService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.USER)
   @Get(':id')
+  @Roles(Role.ADMIN, Role.USER)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async getUserById(@Param('id') id: string) {
     return this.userService.findOneById(id);
   }
 
-  @Put(':id')
-  async updateUser(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    return this.userService.updateUser(id, updateUserDto);
+  @Put()
+  @UseGuards(JwtAuthGuard)
+  async updateUser(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
+    const userId = req.user?.userId;
+    return this.userService.updateUser(userId, updateUserDto);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Put('/password')
-  // async updatePassword(
-  //   @Req() req: Request,
-  //   @Body() updatePasswordDto: UpdatePasswordDto,
-  // ) {
-  //   const userId = req.user?.userId;
-  //   return this.userService.updatePassword(userId, updatePasswordDto);
-  // }
+  @Put('/password')
+  @UseGuards(JwtAuthGuard)
+  async updatePassword(
+    @Req() req: Request,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      throw new NotFoundException('userId istek içerisinde bulunamadı');
+    }
+    return this.userService.updatePassword(userId, updatePasswordDto);
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
@@ -59,5 +64,15 @@ export class UserController {
   async deleteUser(@Param('id') id: string, @Req() req: Request) {
     const adminId = req.user.userId;
     return this.userService.deleteUser(id, adminId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async findUsers(
+    @Query('name') name: string,
+    @Query('start') start: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.userService.findUsersByName(name, start, limit);
   }
 }

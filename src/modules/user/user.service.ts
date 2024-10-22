@@ -7,7 +7,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -20,7 +20,6 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  //tüm kullanıcıları döndürür
   async findAll(): Promise<User[]> {
     return this.userRepository.find();
   }
@@ -48,33 +47,33 @@ export class UserService {
     return user;
   }
 
-  // async updatePassword(
-  //   id: string,
-  //   updatePasswordDto: UpdatePasswordDto,
-  // ): Promise<void> {
-  //   const user = await this.userRepository.findOne({ where: { id: id } });
+  async updatePassword(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: id } });
 
-  //   if (!user) {
-  //     throw new NotFoundException('User not found');
-  //   }
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  //   const isPasswordValid = await bcrypt.compare(
-  //     updatePasswordDto.oldPassword,
-  //     user.password,
-  //   );
-  //   if (!isPasswordValid) {
-  //     throw new BadRequestException('Current password is incorrect');
-  //   }
+    const isPasswordValid = await bcrypt.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
 
-  //   const salt = await bcrypt.genSalt();
-  //   const hashedNewPassword = await bcrypt.hash(
-  //     updatePasswordDto.newPassword,
-  //     salt,
-  //   );
+    const salt = await bcrypt.genSalt();
+    const hashedNewPassword = await bcrypt.hash(
+      updatePasswordDto.newPassword,
+      salt,
+    );
 
-  //   user.password = hashedNewPassword;
-  //   await this.userRepository.save(user);
-  // }
+    user.password = hashedNewPassword;
+    await this.userRepository.save(user);
+  }
 
   async deleteUser(userId: string, adminId: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -84,5 +83,15 @@ export class UserService {
     }
 
     await this.userRepository.delete({ id: userId });
+  }
+
+  async findUsersByName(name: string, start: number, limit: number) {
+    const whereCondition = name ? { name: ILike(`%${name}%`) } : {};
+
+    return await this.userRepository.find({
+      where: whereCondition,
+      skip: start,
+      take: limit,
+    });
   }
 }
