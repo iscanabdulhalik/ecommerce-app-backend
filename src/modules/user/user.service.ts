@@ -17,8 +17,14 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(name?: string, start?: number, end?: number): Promise<User[]> {
+    const whereCondition = name ? { name: ILike(`%${name}%`) } : {};
+
+    return this.userRepository.find({
+      where: whereCondition,
+      skip: start,
+      take: end - start + 1,
+    });
   }
 
   async findOneById(id: string): Promise<User> {
@@ -80,15 +86,5 @@ export class UserService {
     }
 
     await this.userRepository.delete({ id: userId });
-  }
-
-  async findUsersByName(name: string, start: number, limit: number) {
-    const whereCondition = name ? { name: ILike(`%${name}%`) } : {};
-
-    return await this.userRepository.find({
-      where: whereCondition,
-      skip: start,
-      take: limit,
-    });
   }
 }

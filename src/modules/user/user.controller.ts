@@ -30,27 +30,16 @@ export class UserController {
   @Get()
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getAllUsers() {
-    try {
-      return await this.userService.findAll();
-    } catch (error) {
-      this.logger.error('Failed to get all users', error.stack);
-      throw new BadRequestException('Could not retrieve users');
-    }
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('search')
-  async findUsers(
-    @Query('name') name: string,
-    @Query('start') start: number,
-    @Query('limit') limit: number,
+  async getAllUsers(
+    @Query('name') name?: string,
+    @Query('start') start = 1,
+    @Query('end') end = 20,
   ) {
     try {
-      return await this.userService.findUsersByName(name, start, limit);
+      return await this.userService.findAll(name, start, end);
     } catch (error) {
-      this.logger.error('Failed to find users by name', error.stack);
-      throw new BadRequestException('User search failed');
+      this.logger.error('Failed to retrieve users', error.stack);
+      throw new BadRequestException('Could not retrieve users');
     }
   }
 
