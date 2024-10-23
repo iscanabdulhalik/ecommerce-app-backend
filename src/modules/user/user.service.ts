@@ -1,10 +1,7 @@
 import {
-  BadRequestException,
-  Body,
   Injectable,
   NotFoundException,
-  Param,
-  Put,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
@@ -28,7 +25,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new Error(' kullanıcı bulunamadı ');
+      throw new NotFoundException('User not found');
     }
     return user;
   }
@@ -51,7 +48,7 @@ export class UserService {
     id: string,
     updatePasswordDto: UpdatePasswordDto,
   ): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: id } });
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -79,7 +76,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('kullanici bulunamadi');
+      throw new NotFoundException('User not found');
     }
 
     await this.userRepository.delete({ id: userId });

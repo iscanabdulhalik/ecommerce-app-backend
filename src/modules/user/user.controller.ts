@@ -9,6 +9,8 @@ import {
   Delete,
   NotFoundException,
   Query,
+  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../../common/guards/jwt.auth.guard';
@@ -21,27 +23,59 @@ import { Request } from 'express';
 
 @Controller('user')
 export class UserController {
+  private readonly logger = new Logger(UserController.name);
+
   constructor(private readonly userService: UserService) {}
 
   @Get()
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getAllUsers() {
-    return this.userService.findAll();
+    try {
+      return await this.userService.findAll();
+    } catch (error) {
+      this.logger.error('Failed to get all users', error.stack);
+      throw new BadRequestException('Could not retrieve users');
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('search')
+  async findUsers(
+    @Query('name') name: string,
+    @Query('start') start: number,
+    @Query('limit') limit: number,
+  ) {
+    try {
+      return await this.userService.findUsersByName(name, start, limit);
+    } catch (error) {
+      this.logger.error('Failed to find users by name', error.stack);
+      throw new BadRequestException('User search failed');
+    }
   }
 
   @Get(':id')
   @Roles(Role.ADMIN, Role.USER)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getUserById(@Param('id') id: string) {
-    return this.userService.findOneById(id);
+    try {
+      return await this.userService.findOneById(id);
+    } catch (error) {
+      this.logger.error(`Failed to get user with ID: ${id}`, error.stack);
+      throw new NotFoundException('User not found');
+    }
   }
 
   @Put()
   @UseGuards(JwtAuthGuard)
   async updateUser(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
-    const userId = req.user?.userId;
-    return this.userService.updateUser(userId, updateUserDto);
+    try {
+      const userId = req.user?.userId;
+      return await this.userService.updateUser(userId, updateUserDto);
+    } catch (error) {
+      this.logger.error('Failed to update user', error.stack);
+      throw new BadRequestException('User update failed');
+    }
   }
 
   @Put('/password')
@@ -50,29 +84,28 @@ export class UserController {
     @Req() req: Request,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      throw new NotFoundException('userId istek içerisinde bulunamadı');
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        throw new NotFoundException('userId not found in request');
+      }
+      return await this.userService.updatePassword(userId, updatePasswordDto);
+    } catch (error) {
+      this.logger.error('Failed to update password', error.stack);
+      throw new BadRequestException('Password update failed');
     }
-    return this.userService.updatePassword(userId, updatePasswordDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Delete(':id')
   async deleteUser(@Param('id') id: string, @Req() req: Request) {
-    const adminId = req.user.userId;
-    return this.userService.deleteUser(id, adminId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  async findUsers(
-    @Query('name') name: string,
-    @Query('start') start: number,
-    @Query('limit') limit: number,
-  ) {
-    return this.userService.findUsersByName(name, start, limit);
+    try {
+      const adminId = req.user?.userId;
+      return await this.userService.deleteUser(id, adminId);
+    } catch (error) {
+      this.logger.error(`Failed to delete user with ID: ${id}`, error.stack);
+      throw new NotFoundException('User not found or could not be deleted');
+    }
   }
 }
