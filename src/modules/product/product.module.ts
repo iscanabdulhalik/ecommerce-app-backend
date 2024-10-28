@@ -1,11 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ProductService } from './product.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductController } from './product.controller';
-import { JwtModule } from '@nestjs/jwt';
+import { ProductService } from './product.service';
+import { Product } from './entities/product.entity';
+import { Wallet } from '../wallet/entities/wallet.entity';
+import { HistoryModule } from '../history/history.module';
 
 @Module({
-  imports: [JwtModule.register({ secret: 'westerops' })],
+  imports: [TypeOrmModule.forFeature([Product, Wallet]), HistoryModule],
   controllers: [ProductController],
   providers: [ProductService],
+  exports: [ProductService],
 })
 export class ProductModule {}

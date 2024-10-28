@@ -9,11 +9,15 @@ import { Product } from './modules/product/entities/product.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { WalletModule } from './modules/wallet/wallet.module';
+import { ProductModule } from './modules/product/product.module';
 
 @Module({
   imports: [
     AuthModule,
     UserModule,
+    WalletModule,
+    ProductModule,
     JwtModule.register({ secret: 'westerops' }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -26,7 +30,6 @@ import { AuthModule } from './auth/auth.module';
       synchronize: true,
     }),
     TypeOrmModule.forFeature([User, Wallet, Product, History]),
-    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

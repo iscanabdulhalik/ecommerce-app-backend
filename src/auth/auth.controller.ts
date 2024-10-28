@@ -18,19 +18,12 @@ export class AuthController {
   constructor(private readonly userService: AuthService) {}
 
   @Post('/register')
-  @HttpCode(200)
-  async create(@Body() createUserDto: CreateUserDto): Promise<any> {
+  async register(@Body() createUserDto: CreateUserDto) {
     try {
       return await this.userService.register(createUserDto);
     } catch (error) {
-      this.logger.error(
-        `Registration failed for email: ${createUserDto.email}`,
-        error.stack,
-      );
-
-      throw new BadRequestException(
-        'Registration failed. Please check your input and try again.',
-      );
+      this.logger.error('Failed to register user', error.stack);
+      throw new BadRequestException('Could not register user');
     }
   }
 

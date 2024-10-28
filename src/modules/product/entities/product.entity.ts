@@ -2,15 +2,15 @@ import { PrimaryGeneratedColumn, Column, Entity } from 'typeorm';
 
 @Entity()
 export class Product {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   name: string;
 
-  @Column()
+  @Column({ type: 'decimal' })
   price: number;
 
-  @Column()
+  @Column('int')
   stock: number;
 }

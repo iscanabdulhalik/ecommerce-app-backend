@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UserModule } from 'src/modules/user/user.module';
-import { UserService } from 'src/modules/user/user.service';
+import { WalletModule } from 'src/modules/wallet/wallet.module';
+import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt/jwt.strategy';
@@ -11,8 +12,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Wallet]),
     UserModule,
+    WalletModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: 'westerops',

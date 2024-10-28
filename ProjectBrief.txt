@@ -29,7 +29,7 @@ GET /wallet/ -> sadece ADMIN kullanabilmeli cüzdan datalarını user relations 
 GET /wallet/:id -> id'ye göre listeleme yine ADMIN listelemeli USER role gelirse yetkiniz yok şeklinde response dön 403 
 POST /wallet/ -> burda bakiye yüklemek için kullanacağız userId bilgisine göre userId, balance sadece yüklenen bakiye mevcut olana eklenmeli 
  
- 
+
 Product
  
 GET /product/ -> Tüm product listesini tüm kullanıcılar görebilmeli 

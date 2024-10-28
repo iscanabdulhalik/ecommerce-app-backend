@@ -59,7 +59,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateUser(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
     try {
-      const userId = req.user?.userId;
+      const userId = req.userId;
       return await this.userService.updateUser(userId, updateUserDto);
     } catch (error) {
       this.logger.error('Failed to update user', error.stack);
@@ -74,7 +74,7 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     try {
-      const userId = req.user?.userId;
+      const userId = req.userId;
       if (!userId) {
         throw new NotFoundException('userId not found in request');
       }
@@ -90,7 +90,7 @@ export class UserController {
   @Delete(':id')
   async deleteUser(@Param('id') id: string, @Req() req: Request) {
     try {
-      const adminId = req.user?.userId;
+      const adminId = req.userId;
       return await this.userService.deleteUser(id, adminId);
     } catch (error) {
       this.logger.error(`Failed to delete user with ID: ${id}`, error.stack);

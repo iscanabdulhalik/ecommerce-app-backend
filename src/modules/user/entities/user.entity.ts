@@ -36,7 +36,7 @@ export class User {
   })
   role: Role;
 
-  @OneToOne(() => Wallet, (wallet) => wallet.user)
+  @OneToOne(() => Wallet, (wallet) => wallet.user, { cascade: true })
   wallet: Wallet;
 
   @OneToMany(() => History, (history) => history.user)

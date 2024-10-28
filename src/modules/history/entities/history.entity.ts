@@ -6,11 +6,11 @@ export class History {
   @PrimaryGeneratedColumn()
   id: string;
 
-  @Column()
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   date: Date;
 
   @Column()
-  from: string;
+  action: string;
 
   @Column({ type: 'jsonb' })
   details: Record<string, any>;

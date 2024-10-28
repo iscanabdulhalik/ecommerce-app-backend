@@ -1,34 +1,52 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { HistoryService } from './history.service';
 import { CreateHistoryDto } from './dto/create-history.dto';
-import { UpdateHistoryDto } from './dto/update-history.dto';
+import { QueryHistoryDto } from './dto/query-history.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../user/entities/user.entity';
 
 @Controller('history')
 export class HistoryController {
-  constructor(private readonly historyService: HistoryService) {}
+  constructor(
+    private readonly historyService: HistoryService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
   @Post()
-  create(@Body() createHistoryDto: CreateHistoryDto) {
-    return this.historyService.create(createHistoryDto);
+  async createHistory(@Body() createHistoryDto: CreateHistoryDto) {
+    try {
+      const { userId, action, details } = createHistoryDto;
+
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      return await this.historyService.createLog(user, action, details);
+    } catch (error) {
+      throw new BadRequestException('Could not create history log');
+    }
   }
 
   @Get()
-  findAll() {
-    return this.historyService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.historyService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateHistoryDto: UpdateHistoryDto) {
-    return this.historyService.update(+id, updateHistoryDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.historyService.remove(+id);
+  async getHistory(@Query() queryHistoryDto: QueryHistoryDto) {
+    try {
+      const { userId } = queryHistoryDto;
+      if (userId) {
+        return await this.historyService.findByUserId(userId);
+      }
+      return await this.historyService.findAll();
+    } catch (error) {
+      throw new BadRequestException('Could not retrieve history logs');
+    }
   }
 }

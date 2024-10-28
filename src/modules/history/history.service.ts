@@ -1,26 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { CreateHistoryDto } from './dto/create-history.dto';
-import { UpdateHistoryDto } from './dto/update-history.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { History } from './entities/history.entity';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class HistoryService {
-  create(createHistoryDto: CreateHistoryDto) {
-    return 'This action adds a new history';
+  constructor(
+    @InjectRepository(History)
+    private readonly historyRepository: Repository<History>,
+  ) {}
+
+  async createLog(
+    user: User,
+    action: string,
+    details: Record<string, any>,
+  ): Promise<History> {
+    const log = this.historyRepository.create({
+      user,
+      action,
+      details,
+      date: details.timestamp || new Date(),
+    });
+    return await this.historyRepository.save(log);
   }
 
-  findAll() {
-    return `This action returns all history`;
+  async findByUserId(userId: string): Promise<History[]> {
+    return await this.historyRepository.find({
+      where: { user: { id: userId } },
+      order: { date: 'DESC' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} history`;
-  }
-
-  update(id: number, updateHistoryDto: UpdateHistoryDto) {
-    return `This action updates a #${id} history`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} history`;
+  async findAll(): Promise<History[]> {
+    return await this.historyRepository.find({
+      relations: ['user'],
+      order: { date: 'DESC' },
+    });
   }
 }
