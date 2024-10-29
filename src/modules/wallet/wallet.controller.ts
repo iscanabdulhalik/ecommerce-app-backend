@@ -16,6 +16,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
 import { Request } from 'express';
 import { BalanceDto } from './dto/balance-wallet.dto';
+import { request } from 'http';
 
 @Controller('wallet')
 export class WalletController {
@@ -28,10 +29,7 @@ export class WalletController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getAllWallets() {
     try {
-      this.logger.log('Retrieving all wallets');
-      const wallets = await this.walletService.findAll();
-      this.logger.log(`Successfully retrieved ${wallets.length} wallets`);
-      return wallets;
+      return this.walletService.findAll(request);
     } catch (error) {
       this.logger.error('Failed to retrieve wallets', error.stack);
       throw new BadRequestException('Could not retrieve wallets');
@@ -43,10 +41,7 @@ export class WalletController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getWalletById(@Param('id') id: string) {
     try {
-      this.logger.log(`Retrieving wallet with ID: ${id}`);
-      const wallet = await this.walletService.findOneById(id);
-      this.logger.log(`Successfully retrieved wallet with ID: ${id}`);
-      return wallet;
+      return this.walletService.findOneById(id, request);
     } catch (error) {
       this.logger.error(
         `Failed to retrieve wallet with ID: ${id}`,
@@ -62,6 +57,7 @@ export class WalletController {
     try {
       return this.walletService.addBalance(req.user, balanceDto.balance);
     } catch (error) {
+      this.logger.error('Failed to add balance', error.stack);
       throw new BadRequestException('Could not add balance');
     }
   }

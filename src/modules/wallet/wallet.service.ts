@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
 import { Role } from 'src/common/enums/role.enum';
 import { HistoryService } from '../history/history.service';
-import { JwtPayload } from 'src/common/types/jwtPayload';
 
 @Injectable()
 export class WalletService {
@@ -20,27 +19,37 @@ export class WalletService {
     private readonly historyService: HistoryService,
   ) {}
 
-  async findAll() {
+  async findAll(requestingUser: any) {
     try {
-      this.logger.log('Retrieving all wallets');
-
+      const { userId } = requestingUser;
       const wallets = await this.walletRepository.find({ relations: ['user'] });
 
-      this.logger.log(`Successfully retrieved ${wallets.length} wallets`);
-      await this.historyService.createLog(null, 'WALLET', {
-        actionType: 'retrieveAll',
-        timestamp: new Date(),
+      await this.historyService.createLog(userId, 'WALLET', {
+        user: userId,
+        action: 'retrieveAll',
+        details: { wallets },
+        date: new Date(),
       });
 
       return wallets;
     } catch (error) {
-      this.logger.error('Error retrieving wallets', error.stack);
+      await this.historyService.createLog(
+        requestingUser.userId,
+        'WALLET_ERROR',
+        {
+          user: requestingUser.userId,
+          action: 'retrieveAllError',
+          details: { error: error.stack },
+          date: new Date(),
+        },
+      );
       throw new BadRequestException('Could not retrieve wallets');
     }
   }
 
-  async findOneById(id: string) {
+  async findOneById(id: string, requestingUser: any) {
     try {
+      const { userId } = requestingUser;
       const wallet = await this.walletRepository.findOne({
         where: { id },
         relations: ['user'],
@@ -48,18 +57,31 @@ export class WalletService {
       if (!wallet) {
         throw new BadRequestException('Wallet not found');
       }
+      await this.historyService.createLog(userId, 'WALLET', {
+        user: userId,
+        action: 'retrieveById',
+        details: { wallet },
+        date: new Date(),
+      });
       return wallet;
     } catch (error) {
+      await this.historyService.createLog(
+        requestingUser.userId,
+        'WALLET_ERROR',
+        {
+          user: requestingUser.userId,
+          action: 'retrieveByIdError',
+          details: { error: error.stack },
+          date: new Date(),
+        },
+      );
       throw new BadRequestException('Error retrieving wallet');
     }
   }
 
   async addBalance(requestingUser: any, toBeAddedBalance: number) {
     try {
-      const { userId, email, role, walletId } = requestingUser;
-      this.logger.log(
-        `Attempting to add balance for email: ${email} userId: ${userId}, balance: ${toBeAddedBalance}, role: ${role}`,
-      );
+      const { userId, role, walletId } = requestingUser;
 
       if (role !== Role.ADMIN) {
         throw new ForbiddenException(
@@ -78,9 +100,6 @@ export class WalletService {
 
       const newBalance = Number(currentBalance) + Number(toBeAddedBalance);
 
-      this.logger.log(
-        `Current balance: ${currentBalance}, New balance: ${newBalance}`,
-      );
       if (newBalance < 0) {
         throw new BadRequestException('Insufficient balance');
       }
@@ -88,11 +107,26 @@ export class WalletService {
       wallet.balance = newBalance;
       await this.walletRepository.save(wallet);
 
-      this.logger.log(`New balance saved for userId: ${userId}`);
+      await this.historyService.createLog(userId, 'WALLET', {
+        user: userId,
+        action: 'addBalance',
+        details: toBeAddedBalance,
+        newBalance,
+        timestamp: new Date(),
+      });
 
       return wallet;
     } catch (error) {
-      this.logger.error(error.stack);
+      await this.historyService.createLog(
+        requestingUser.userId,
+        'WALLET_ERROR',
+        {
+          user: requestingUser.userId,
+          action: 'addBalanceError',
+          details: { error: error.stack },
+          timestamp: new Date(),
+        },
+      );
       throw new BadRequestException('Could not add balance to wallet');
     }
   }

@@ -17,7 +17,6 @@ export class ProductService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Wallet)
     private readonly walletRepository: Repository<Wallet>,
-    private readonly historyService: HistoryService,
   ) {}
 
   async findAll(): Promise<Product[]> {

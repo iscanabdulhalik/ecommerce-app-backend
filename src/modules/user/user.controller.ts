@@ -19,7 +19,7 @@ import { RolesGuard } from '../../common/guards/role.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { Request } from 'express';
+import Express from 'express';
 
 @Controller('user')
 export class UserController {
@@ -31,12 +31,14 @@ export class UserController {
   @Roles(Role.ADMIN)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getAllUsers(
+    @Req() req: Express.Request,
     @Query('name') name?: string,
     @Query('start') start = 1,
     @Query('end') end = 20,
   ) {
     try {
-      return await this.userService.findAll(name, start, end);
+      const userId = req.user['userId'];
+      return await this.userService.findAll(name, start, end, userId);
     } catch (error) {
       this.logger.error('Failed to retrieve users', error.stack);
       throw new BadRequestException('Could not retrieve users');
@@ -57,7 +59,10 @@ export class UserController {
 
   @Put()
   @UseGuards(JwtAuthGuard)
-  async updateUser(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
+  async updateUser(
+    @Req() req: Express.Request,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     try {
       const userId = req.userId;
       return await this.userService.updateUser(userId, updateUserDto);
@@ -70,7 +75,7 @@ export class UserController {
   @Put('/password')
   @UseGuards(JwtAuthGuard)
   async updatePassword(
-    @Req() req: Request,
+    @Req() req: Express.Request,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     try {
@@ -88,7 +93,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Delete(':id')
-  async deleteUser(@Param('id') id: string, @Req() req: Request) {
+  async deleteUser(@Param('id') id: string, @Req() req: Express.Request) {
     try {
       const adminId = req.userId;
       return await this.userService.deleteUser(id, adminId);
