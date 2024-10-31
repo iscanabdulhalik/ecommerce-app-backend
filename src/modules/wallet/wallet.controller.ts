@@ -6,7 +6,6 @@ import {
   Body,
   UseGuards,
   Req,
-  Logger,
   BadRequestException,
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
@@ -20,8 +19,6 @@ import { request } from 'http';
 
 @Controller('wallet')
 export class WalletController {
-  private readonly logger = new Logger(WalletController.name);
-
   constructor(private readonly walletService: WalletService) {}
 
   @Get()
@@ -31,7 +28,6 @@ export class WalletController {
     try {
       return this.walletService.findAll(request);
     } catch (error) {
-      this.logger.error('Failed to retrieve wallets', error.stack);
       throw new BadRequestException('Could not retrieve wallets');
     }
   }
@@ -43,10 +39,6 @@ export class WalletController {
     try {
       return this.walletService.findOneById(id, request);
     } catch (error) {
-      this.logger.error(
-        `Failed to retrieve wallet with ID: ${id}`,
-        error.stack,
-      );
       throw new BadRequestException('Could not retrieve wallet');
     }
   }
@@ -57,7 +49,6 @@ export class WalletController {
     try {
       return this.walletService.addBalance(req.user, balanceDto.balance);
     } catch (error) {
-      this.logger.error('Failed to add balance', error.stack);
       throw new BadRequestException('Could not add balance');
     }
   }

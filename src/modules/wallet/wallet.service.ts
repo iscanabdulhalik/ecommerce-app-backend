@@ -1,28 +1,20 @@
-import {
-  Injectable,
-  ForbiddenException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Wallet } from './entities/wallet.entity';
-import { Role } from 'src/common/enums/role.enum';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { WalletRepository } from './repository-wallet';
 import { HistoryService } from '../history/history.service';
 
 @Injectable()
 export class WalletService {
   logger: Logger = new Logger('WalletService');
+
   constructor(
-    @InjectRepository(Wallet)
-    private readonly walletRepository: Repository<Wallet>,
+    private readonly walletRepository: WalletRepository,
     private readonly historyService: HistoryService,
   ) {}
 
   async findAll(requestingUser: any) {
     try {
       const { userId } = requestingUser;
-      const wallets = await this.walletRepository.find({ relations: ['user'] });
+      const wallets = await this.walletRepository.findAllWithUserRelation();
 
       await this.historyService.createLog(userId, 'WALLET', {
         user: userId,
@@ -50,13 +42,8 @@ export class WalletService {
   async findOneById(id: string, requestingUser: any) {
     try {
       const { userId } = requestingUser;
-      const wallet = await this.walletRepository.findOne({
-        where: { id },
-        relations: ['user'],
-      });
-      if (!wallet) {
-        throw new BadRequestException('Wallet not found');
-      }
+      const wallet = await this.walletRepository.findByIdWithUserRelation(id);
+
       await this.historyService.createLog(userId, 'WALLET', {
         user: userId,
         action: 'retrieveById',
@@ -65,47 +52,24 @@ export class WalletService {
       });
       return wallet;
     } catch (error) {
-      await this.historyService.createLog(
-        requestingUser.userId,
-        'WALLET_ERROR',
-        {
-          user: requestingUser.userId,
-          action: 'retrieveByIdError',
-          details: { error: error.stack },
-          date: new Date(),
-        },
-      );
       throw new BadRequestException('Error retrieving wallet');
     }
   }
 
   async addBalance(requestingUser: any, toBeAddedBalance: number) {
     try {
-      const { userId, role, walletId } = requestingUser;
+      const { userId, walletId } = requestingUser;
 
-      if (role !== Role.ADMIN) {
-        throw new ForbiddenException(
-          'You do not have permission to modify this wallet',
-        );
-      }
+      const wallet = await this.walletRepository.findById(walletId);
 
-      const wallet: Wallet = await this.walletRepository.findOne({
-        where: { id: walletId },
-      });
-
-      if (!wallet) {
-        throw new BadRequestException('Wallet not found');
-      }
-      const currentBalance = wallet.balance;
-
-      const newBalance = Number(currentBalance) + Number(toBeAddedBalance);
+      const newBalance = Number(wallet.balance) + Number(toBeAddedBalance);
 
       if (newBalance < 0) {
         throw new BadRequestException('Insufficient balance');
       }
 
       wallet.balance = newBalance;
-      await this.walletRepository.save(wallet);
+      await this.walletRepository.saveWallet(wallet);
 
       await this.historyService.createLog(userId, 'WALLET', {
         user: userId,
@@ -117,16 +81,6 @@ export class WalletService {
 
       return wallet;
     } catch (error) {
-      await this.historyService.createLog(
-        requestingUser.userId,
-        'WALLET_ERROR',
-        {
-          user: requestingUser.userId,
-          action: 'addBalanceError',
-          details: { error: error.stack },
-          timestamp: new Date(),
-        },
-      );
       throw new BadRequestException('Could not add balance to wallet');
     }
   }
