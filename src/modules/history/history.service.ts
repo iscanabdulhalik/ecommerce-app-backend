@@ -1,48 +1,28 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { History } from './entities/history.entity';
-import { User } from '../user/entities/user.entity';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { HistoryRepository } from './repository-history';
 
 @Injectable()
 export class HistoryService {
-  constructor(
-    @InjectRepository(History)
-    private readonly historyRepository: Repository<History>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-  ) {}
+  constructor(private readonly historyRepository: HistoryRepository) {}
 
   async createLog(
     userId: string,
     action: string,
     details: Record<string, any>,
-  ): Promise<History> {
-    const user = await this.userRepository.findOne({ where: { id: userId } }); // User'ı alıyoruz
+  ) {
+    const user = await this.historyRepository.findUserById(userId);
     if (!user) {
-      throw new Error('User not found');
+      throw new BadRequestException('User not found');
     }
 
-    const log = this.historyRepository.create({
-      user,
-      action,
-      details,
-      date: details.timestamp || new Date(),
-    });
-    return await this.historyRepository.save(log);
+    return await this.historyRepository.createHistoryLog(user, action, details);
   }
 
-  async findByUserId(userId: string): Promise<History[]> {
-    return await this.historyRepository.find({
-      where: { user: { id: userId } },
-      order: { date: 'DESC' },
-    });
+  async findByUserId(userId: string) {
+    return await this.historyRepository.findHistoriesByUserId(userId);
   }
 
-  async findAll(): Promise<History[]> {
-    return await this.historyRepository.find({
-      relations: ['user'],
-      order: { date: 'DESC' },
-    });
+  async findAll() {
+    return await this.historyRepository.findAllHistories();
   }
 }

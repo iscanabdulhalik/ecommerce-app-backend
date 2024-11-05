@@ -1,23 +1,30 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { WalletRepository } from './repository-wallet';
 import { HistoryService } from '../history/history.service';
+import { REQUEST } from '@nestjs/core';
 
 @Injectable()
 export class WalletService {
-  logger: Logger = new Logger('WalletService');
-
   constructor(
     private readonly walletRepository: WalletRepository,
     private readonly historyService: HistoryService,
+    @Inject(REQUEST) private readonly request: Request,
   ) {}
 
-  async findAll(requestingUser: any) {
+  private get userId(): string {
+    return this.request['userId'];
+  }
+
+  private get walletId(): string {
+    return this.request['walletId'];
+  }
+
+  async findAll() {
     try {
-      const { userId } = requestingUser;
       const wallets = await this.walletRepository.findAllWithUserRelation();
 
-      await this.historyService.createLog(userId, 'WALLET', {
-        user: userId,
+      await this.historyService.createLog(this.userId, 'WALLET', {
+        user: this.userId,
         action: 'retrieveAll',
         details: { wallets },
         date: new Date(),
@@ -25,27 +32,16 @@ export class WalletService {
 
       return wallets;
     } catch (error) {
-      await this.historyService.createLog(
-        requestingUser.userId,
-        'WALLET_ERROR',
-        {
-          user: requestingUser.userId,
-          action: 'retrieveAllError',
-          details: { error: error.stack },
-          date: new Date(),
-        },
-      );
       throw new BadRequestException('Could not retrieve wallets');
     }
   }
 
-  async findOneById(id: string, requestingUser: any) {
+  async findOneById(id: string) {
     try {
-      const { userId } = requestingUser;
       const wallet = await this.walletRepository.findByIdWithUserRelation(id);
 
-      await this.historyService.createLog(userId, 'WALLET', {
-        user: userId,
+      await this.historyService.createLog(this.userId, 'WALLET', {
+        user: this.userId,
         action: 'retrieveById',
         details: { wallet },
         date: new Date(),
@@ -56,11 +52,9 @@ export class WalletService {
     }
   }
 
-  async addBalance(requestingUser: any, toBeAddedBalance: number) {
+  async addBalance(toBeAddedBalance: number) {
     try {
-      const { userId, walletId } = requestingUser;
-
-      const wallet = await this.walletRepository.findById(walletId);
+      const wallet = await this.walletRepository.findByIdWithUserRelation(this.walletId);
 
       const newBalance = Number(wallet.balance) + Number(toBeAddedBalance);
 
@@ -69,19 +63,18 @@ export class WalletService {
       }
 
       wallet.balance = newBalance;
-      await this.walletRepository.saveWallet(wallet);
 
-      await this.historyService.createLog(userId, 'WALLET', {
-        user: userId,
+      await this.walletRepository.saveWallet(wallet);
+      await this.historyService.createLog(this.userId, 'WALLET', {
+        user: this.userId,
         action: 'addBalance',
         details: toBeAddedBalance,
         newBalance,
         timestamp: new Date(),
       });
-
       return wallet;
     } catch (error) {
-      throw new BadRequestException('Could not add balance to wallet');
+      throw new BadRequestException('Error adding balance');
     }
   }
 }

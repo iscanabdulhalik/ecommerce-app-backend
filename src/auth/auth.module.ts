@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UserModule } from 'src/modules/user/user.module';
 import { WalletModule } from 'src/modules/wallet/wallet.module';
@@ -13,7 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Wallet]),
-    UserModule,
+    forwardRef(() => UserModule),
     WalletModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({

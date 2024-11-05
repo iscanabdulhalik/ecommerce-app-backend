@@ -11,6 +11,7 @@ import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ProductModule } from './modules/product/product.module';
+import { HistoryModule } from './modules/history/history.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProductModule } from './modules/product/product.module';
     UserModule,
     WalletModule,
     ProductModule,
+    HistoryModule,
     JwtModule.register({ secret: 'westerops' }),
     TypeOrmModule.forRoot({
       type: 'postgres',

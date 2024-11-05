@@ -1,4 +1,5 @@
-import { PrimaryGeneratedColumn, Column, Entity } from 'typeorm';
+import { PrimaryGeneratedColumn, Column, Entity, OneToMany } from 'typeorm';
+import { History } from 'src/modules/history/entities/history.entity';
 
 @Entity()
 export class Product {
@@ -13,4 +14,7 @@ export class Product {
 
   @Column('int')
   stock: number;
+
+  @OneToMany(() => History, (history) => history.product)
+  history: History[];
 }

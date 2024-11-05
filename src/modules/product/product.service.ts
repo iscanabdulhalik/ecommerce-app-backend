@@ -1,75 +1,62 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Product } from './entities/product.entity';
-import { Wallet } from '../wallet/entities/wallet.entity';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { ProductRepository } from './repository-product';
 import { CreateProductDto } from './dto/create-product.dto';
+import { REQUEST } from '@nestjs/core';
 import { HistoryService } from '../history/history.service';
 
 @Injectable()
 export class ProductService {
   constructor(
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
-    @InjectRepository(Wallet)
-    private readonly walletRepository: Repository<Wallet>,
+    private readonly historyService: HistoryService,
+    private readonly productRepository: ProductRepository,
+    @Inject(REQUEST) private readonly request: Request,
   ) {}
 
-  async findAll(): Promise<Product[]> {
-    return await this.productRepository.find();
+  private get userId(): string {
+    return this.request['userId'];
   }
 
-  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    const product = this.productRepository.create(createProductDto);
-    return await this.productRepository.save(product);
+  async findAll() {
+    await this.historyService.createLog(this.userId, 'PRODUCT', {
+      user: this.userId,
+      action: 'retrieveAll',
+      details: { date: new Date() },
+    });
+    return await this.productRepository.findAllProducts();
   }
 
-  async buyProduct(user: any, productId: string, quantity: number) {
-    const product = await this.productRepository.findOne({
-      where: { id: productId },
-    });
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
+  async createProduct(createProductDto: CreateProductDto) {
+    return await this.productRepository.createProduct(createProductDto);
+  }
 
-    if (product.stock < quantity) {
-      throw new BadRequestException('Not enough stock available');
-    }
+  async buyProduct(productId: string, quantity: number) {
+    try {
+      const product = await this.productRepository.findProductById(productId);
+      if (product.stock < quantity) {
+        throw new BadRequestException('Not enough stock available');
+      }
 
-    const { userId } = user;
-    const wallet = await this.walletRepository.findOne({
-      where: { user: { id: userId } },
-    });
-    if (!wallet) {
-      throw new BadRequestException('Wallet not found');
-    }
+      const wallet = await this.productRepository.findWalletByUserId(this.userId);
+      const totalCost = product.price * quantity;
+      if (wallet.balance < totalCost) {
+        throw new BadRequestException('Insufficient balance');
+      }
 
-    const totalCost = product.price * quantity;
-    if (wallet.balance < totalCost) {
-      throw new BadRequestException('Insufficient balance');
-    }
+      wallet.balance -= totalCost;
+      product.stock -= quantity;
 
-    wallet.balance -= totalCost;
-    product.stock -= quantity;
-
-    function createHistory() {
-      const history = this.historyRepository.create({
-        user: { id: user.userId },
-        product: { id: productId },
-        quantity,
-        totalCost,
+      await this.historyService.createLog(this.userId, 'PRODUCT', {
+        user: this.userId,
+        action: 'BUY',
+        details: { quantity, totalCost },
+        date: new Date(),
       });
-      return this.historyRepository.save(history);
+      await this.productRepository.saveWallet(wallet);
+      await this.productRepository.saveProduct(product);
+
+      return { message: 'Purchase successful', product, wallet };
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-    createHistory();
-
-    await this.walletRepository.save(wallet);
-    await this.productRepository.save(product);
-
-    return { message: 'Purchase successful', product, wallet };
   }
 }

@@ -22,7 +22,7 @@ export class WalletRepository {
   }
 
   async findById(id: string) {
-    return this.walletRepository.findOneOrFail({
+    return this.walletRepository.findOne({
       where: { id },
     });
   }

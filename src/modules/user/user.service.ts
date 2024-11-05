@@ -1,97 +1,66 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { UserRepository } from './repository-user';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import * as bcrypt from 'bcrypt';
 import { HistoryService } from '../history/history.service';
+import { User } from './entities/user.entity';
+import { REQUEST } from '@nestjs/core';
 
 @Injectable()
 export class UserService {
-  logger: Logger = new Logger('UserService');
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userRepository: UserRepository,
     private readonly historyService: HistoryService,
+    @Inject(REQUEST) private readonly request: Request,
   ) {}
 
-  async findAll(
-    name?: string,
-    start?: number,
-    end?: number,
-    userId?: string,
-  ): Promise<User[]> {
+  private get userId(): string {
+    return this.request['userId'];
+  }
+
+  async findAll(name?: string, start?: number, end?: number): Promise<User[]> {
     try {
-      const whereCondition = name ? { name: ILike(`%${name}%`) } : {};
+      const users = await this.userRepository.findAllWithCondition(name, start, end);
 
-      await this.historyService.createLog(userId, 'USER', {
-        user: userId,
+      await this.historyService.createLog(this.userId, 'USER', {
+        user: this.userId,
         action: 'retrieveAll',
-        details: { whereCondition, start, end },
+        details: { users, start, end },
         date: new Date(),
       });
 
-      return await this.userRepository.find({
-        where: whereCondition,
-        skip: start,
-        take: end - start + 1,
-      });
+      return users;
     } catch (error) {
-      await this.historyService.createLog(userId, 'USER_ERROR', {
-        user: userId,
-        action: 'retrieveAllError',
-        details: { error: error.stack },
-        date: new Date(),
-      });
       throw new BadRequestException('Could not retrieve users');
     }
   }
 
   async findOneById(id: string): Promise<User> {
     try {
-      const user = await this.userRepository.findOne({ where: { id } });
+      const user = await this.userRepository.findOneById(id);
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      await this.historyService.createLog(id, 'USER', {
-        user: id,
+      await this.historyService.createLog(this.userId, 'USER', {
+        user: this.userId,
         action: 'retrieveById',
         details: { user },
         date: new Date(),
       });
       return user;
     } catch (error) {
-      await this.historyService.createLog(id, 'USER_ERROR', {
-        user: id,
-        action: 'retrieveByIdError',
-        details: { error: error.stack },
-        date: new Date(),
-      });
       throw new BadRequestException('Could not retrieve user');
     }
   }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async updateUser(updateUserDto: UpdateUserDto): Promise<User> {
     try {
-      const user = await this.userRepository.findOne({ where: { id } });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
+      const user = await this.userRepository.findOneById(this.userId);
 
       Object.assign(user, updateUserDto);
+      await this.userRepository.updateUser(user);
 
-      await this.userRepository.save(user);
-
-      await this.historyService.createLog(id, 'USER', {
-        user: id,
+      await this.historyService.createLog(this.userId, 'USER', {
+        user: this.userId,
         action: 'update',
         details: { updateUserDto },
         date: new Date(),
@@ -99,82 +68,48 @@ export class UserService {
 
       return user;
     } catch (error) {
-      await this.historyService.createLog(id, 'USER_ERROR', {
-        user: id,
-        action: 'updateError',
-        details: { error: error.stack },
-        date: new Date(),
-      });
       throw new BadRequestException('Could not update user');
     }
   }
 
-  async updatePassword(
-    id: string,
-    updatePasswordDto: UpdatePasswordDto,
-  ): Promise<void> {
+  async updatePassword(updatePasswordDto: UpdatePasswordDto): Promise<void> {
     try {
-      const user = await this.userRepository.findOne({ where: { id } });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      const isPasswordValid = await bcrypt.compare(
-        updatePasswordDto.oldPassword,
-        user.password,
-      );
+      console.log(this.userId);
+      const user = await this.userRepository.findOneById(this.userId);
+      const isPasswordValid = await bcrypt.compare(updatePasswordDto.oldPassword, user.password);
       if (!isPasswordValid) {
         throw new BadRequestException('Current password is incorrect');
       }
 
       const salt = await bcrypt.genSalt();
-      const hashedNewPassword = await bcrypt.hash(
-        updatePasswordDto.newPassword,
-        salt,
-      );
+      user.password = await bcrypt.hash(updatePasswordDto.newPassword, salt);
+      await this.userRepository.updateUser(user);
 
-      user.password = hashedNewPassword;
-      await this.historyService.createLog(id, 'USER', {
-        user: id,
+      await this.historyService.createLog(this.userId, 'USER', {
+        user: this.userId,
         action: 'updatePassword',
         details: { updatePasswordDto },
         date: new Date(),
       });
-      await this.userRepository.save(user);
     } catch (error) {
-      await this.historyService.createLog(id, 'USER_ERROR', {
-        user: id,
-        action: 'updatePasswordError',
-        details: { error: error.stack },
-        date: new Date(),
-      });
+      console.log(error);
       throw new BadRequestException('Could not update password');
     }
   }
 
-  async deleteUser(userId: string, adminId: string): Promise<void> {
+  async deleteUser(userId: string): Promise<void> {
     try {
-      const user = await this.userRepository.findOne({ where: { id: userId } });
+      const user = await this.userRepository.findOneById(userId);
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      await this.historyService.createLog(adminId, 'USER', {
-        user: adminId,
+      await this.historyService.createLog(this.userId, 'USER', {
+        user: this.userId,
         action: 'delete',
         details: { user },
         date: new Date(),
       });
-      await this.userRepository.delete({ id: userId });
+
+      await this.userRepository.deleteUserById(userId);
     } catch (error) {
-      await this.historyService.createLog(adminId, 'USER_ERROR', {
-        user: adminId,
-        action: 'deleteError',
-        details: { error: error.stack },
-        date: new Date(),
-      });
       throw new BadRequestException('Could not delete user');
     }
   }

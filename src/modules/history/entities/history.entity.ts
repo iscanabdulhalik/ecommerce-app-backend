@@ -1,5 +1,6 @@
 import { PrimaryGeneratedColumn, Column, ManyToOne, Entity } from 'typeorm';
 import { User } from 'src/modules/user/entities/user.entity';
+import { Product } from 'src/modules/product/entities/product.entity';
 
 @Entity()
 export class History {
@@ -15,6 +16,15 @@ export class History {
   @Column({ type: 'jsonb' })
   details: Record<string, any>;
 
-  @ManyToOne(() => User, (user) => user.history, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.history, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
   user: User;
+
+  @ManyToOne(() => Product, (product) => product.history, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
+  product: Product;
 }

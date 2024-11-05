@@ -1,32 +1,23 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Param, Body, UseGuards, BadRequestException, Put } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../../common/guards/jwt.auth.guard';
 import { RolesGuard } from '../../common/guards/role.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
-import { Request } from 'express';
 import { BalanceDto } from './dto/balance-wallet.dto';
-import { request } from 'http';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
+@UseGuards(JwtAuthGuard, AuthGuard)
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @Get()
   @Roles(Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   async getAllWallets() {
     try {
-      return this.walletService.findAll(request);
+      return this.walletService.findAll();
     } catch (error) {
       throw new BadRequestException('Could not retrieve wallets');
     }
@@ -34,20 +25,19 @@ export class WalletController {
 
   @Get(':id')
   @Roles(Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   async getWalletById(@Param('id') id: string) {
     try {
-      return this.walletService.findOneById(id, request);
+      return this.walletService.findOneById(id);
     } catch (error) {
       throw new BadRequestException('Could not retrieve wallet');
     }
   }
 
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  async addBalance(@Req() req: Request, @Body() balanceDto: BalanceDto) {
+  @Put()
+  async addBalance(@Body() balanceDto: BalanceDto) {
     try {
-      return this.walletService.addBalance(req.user, balanceDto.balance);
+      return this.walletService.addBalance(balanceDto.balance);
     } catch (error) {
       throw new BadRequestException('Could not add balance');
     }
