@@ -5,7 +5,7 @@ import { ProductService } from './product.service';
 import { Product } from './entities/product.entity';
 import { Wallet } from '../wallet/entities/wallet.entity';
 import { HistoryModule } from '../history/history.module';
-import { ProductRepository } from './repository-product';
+import { ProductRepository } from './product.repository';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({

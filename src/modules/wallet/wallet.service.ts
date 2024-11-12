@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
-import { WalletRepository } from './repository-wallet';
+import { WalletRepository } from './wallet.repository';
 import { HistoryService } from '../history/history.service';
 import { REQUEST } from '@nestjs/core';
 

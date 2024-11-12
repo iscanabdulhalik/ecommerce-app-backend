@@ -5,7 +5,7 @@ import { WalletService } from './wallet.service';
 import { Wallet } from './entities/wallet.entity';
 import { User } from '../user/entities/user.entity';
 import { HistoryModule } from '../history/history.module';
-import { WalletRepository } from './repository-wallet';
+import { WalletRepository } from './wallet.repository';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({

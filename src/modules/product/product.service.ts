@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
-import { ProductRepository } from './repository-product';
+import { ProductRepository } from './product.repository';
 import { CreateProductDto } from './dto/create-product.dto';
 import { REQUEST } from '@nestjs/core';
 import { HistoryService } from '../history/history.service';

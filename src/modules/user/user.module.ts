@@ -4,7 +4,7 @@ import { User } from './entities/user.entity';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { HistoryModule } from '../history/history.module';
-import { UserRepository } from './repository-user';
+import { UserRepository } from './user.repository';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({

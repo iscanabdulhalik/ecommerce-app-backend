@@ -1,15 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { HistoryRepository } from './repository-history';
+import { HistoryRepository } from './product.history';
 
 @Injectable()
 export class HistoryService {
   constructor(private readonly historyRepository: HistoryRepository) {}
 
-  async createLog(
-    userId: string,
-    action: string,
-    details: Record<string, any>,
-  ) {
+  async createLog(userId: string, action: string, details: Record<string, any>) {
     const user = await this.historyRepository.findUserById(userId);
     if (!user) {
       throw new BadRequestException('User not found');
