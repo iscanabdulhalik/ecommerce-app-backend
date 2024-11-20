@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Body, UseGuards, BadRequestException, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Body,
+  UseGuards,
+  BadRequestException,
+  Put,
+  Post,
+} from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../../common/guards/jwt.auth.guard';
 import { RolesGuard } from '../../common/guards/role.guard';
@@ -6,6 +15,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from 'src/common/enums/role.enum';
 import { BalanceDto } from './dto/balance-wallet.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { Wallet } from './entities/wallet.entity';
 
 @UseGuards(JwtAuthGuard, AuthGuard)
 @Controller('wallet')

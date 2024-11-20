@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource, Repository, ILike } from 'typeorm';
+import { Repository, ILike, DataSource } from 'typeorm';
 import { User } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class UserRepository extends Repository<User> {
@@ -9,16 +11,23 @@ export class UserRepository extends Repository<User> {
   }
 
   async findAllWithCondition(name?: string, start?: number, end?: number): Promise<User[]> {
-    const whereCondition = name ? { name: ILike(`%${name}%`) } : {};
+    try {
+      const whereCondition = name ? { name: ILike(`%${name}%`) } : {};
 
-    return await this.find({
-      where: whereCondition,
-      skip: start,
-      take: end - start + 1,
-    });
+      const users = await this.find({
+        where: whereCondition,
+        skip: start,
+        take: end - start + 1,
+      });
+
+      return users;
+    } catch (error) {
+      console.error('Veritabanı Hatası:', error);
+      throw error;
+    }
   }
 
-  async findOneById(id: string): Promise<User> {
+  async findUserById(id: string): Promise<User> {
     const user = await this.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -32,5 +41,25 @@ export class UserRepository extends Repository<User> {
 
   async deleteUserById(userId: string): Promise<void> {
     await this.delete({ id: userId });
+  }
+
+  async findUserByEmail(email: string): Promise<User | null> {
+    const user = await this.findOne({ where: { email } });
+    return user;
+  }
+
+  async saveUser(user: User): Promise<User> {
+    return this.save(user);
+  }
+
+  async createNewUser(createUserDto: CreateUserDto): Promise<User> {
+    const hashedPassword = await argon2.hash(createUserDto.password);
+
+    const newUser = this.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+
+    return await this.save(newUser);
   }
 }

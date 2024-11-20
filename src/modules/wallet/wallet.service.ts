@@ -2,12 +2,16 @@ import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { WalletRepository } from './wallet.repository';
 import { HistoryService } from '../history/history.service';
 import { REQUEST } from '@nestjs/core';
+import { Wallet } from './entities/wallet.entity';
+import { CreateWalletDto } from './dto/create-wallet.dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class WalletService {
   constructor(
     private readonly walletRepository: WalletRepository,
     private readonly historyService: HistoryService,
+    private readonly userService: UserService,
     @Inject(REQUEST) private readonly request: Request,
   ) {}
 
@@ -15,16 +19,11 @@ export class WalletService {
     return this.request['userId'];
   }
 
-  private get walletId(): string {
-    return this.request['walletId'];
-  }
-
   async findAll() {
     try {
       const wallets = await this.walletRepository.findAllWithUserRelation();
 
-      await this.historyService.createLog(this.userId, 'WALLET', {
-        user: this.userId,
+      await this.historyService.createLog('WALLET', {
         action: 'retrieveAll',
         details: { wallets },
         date: new Date(),
@@ -38,10 +37,9 @@ export class WalletService {
 
   async findOneById(id: string) {
     try {
-      const wallet = await this.walletRepository.findByIdWithUserRelation(id);
+      const wallet = await this.walletRepository.findById(id);
 
-      await this.historyService.createLog(this.userId, 'WALLET', {
-        user: this.userId,
+      await this.historyService.createLog('WALLET', {
         action: 'retrieveById',
         details: { wallet },
         date: new Date(),
@@ -54,7 +52,8 @@ export class WalletService {
 
   async addBalance(toBeAddedBalance: number) {
     try {
-      const wallet = await this.walletRepository.findByIdWithUserRelation(this.walletId);
+      const wallet = await this.walletRepository.findByIdWithUserRelation();
+      const user = await this.userService.findOneById(this.userId);
 
       const newBalance = Number(wallet.balance) + Number(toBeAddedBalance);
 
@@ -65,10 +64,9 @@ export class WalletService {
       wallet.balance = newBalance;
 
       await this.walletRepository.saveWallet(wallet);
-      await this.historyService.createLog(this.userId, 'WALLET', {
-        user: this.userId,
+      await this.historyService.createLog('WALLET', {
         action: 'addBalance',
-        details: toBeAddedBalance,
+        details: `user: ${user.name} added ${toBeAddedBalance} to wallet`,
         newBalance,
         timestamp: new Date(),
       });
@@ -76,5 +74,18 @@ export class WalletService {
     } catch (error) {
       throw new BadRequestException('Error adding balance');
     }
+  }
+
+  async saveWallet(wallet: Wallet) {
+    await this.walletRepository.saveWallet(wallet);
+  }
+
+  async findWalletByUserId(): Promise<Wallet> {
+    return await this.walletRepository.findWalletByUserId();
+  }
+
+  async createWallet(createWalletDto: CreateWalletDto): Promise<Wallet> {
+    const wallet = await this.walletRepository.createWallet(createWalletDto);
+    return wallet;
   }
 }

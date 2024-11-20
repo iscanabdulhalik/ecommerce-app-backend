@@ -14,7 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [
     TypeOrmModule.forFeature([User, Wallet]),
     forwardRef(() => UserModule),
-    WalletModule,
+    forwardRef(() => WalletModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: 'westerops',

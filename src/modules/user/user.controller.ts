@@ -25,6 +25,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   async getAllUsers(
     @Query('name') name?: string,
@@ -39,7 +40,7 @@ export class UserController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.USER)
+  @Roles(Role.ADMIN)
   async getUserById(@Param('id') id: string) {
     try {
       return await this.userService.findOneById(id);

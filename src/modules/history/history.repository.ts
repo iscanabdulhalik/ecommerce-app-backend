@@ -6,11 +6,9 @@ import { User } from '../user/entities/user.entity';
 @Injectable()
 export class HistoryRepository {
   private readonly historyRepository: Repository<History>;
-  private readonly userRepository: Repository<User>;
 
   constructor(private readonly dataSource: DataSource) {
     this.historyRepository = this.dataSource.getRepository(History);
-    this.userRepository = this.dataSource.getRepository(User);
   }
 
   async createHistoryLog(
@@ -24,11 +22,8 @@ export class HistoryRepository {
       details,
       date: details.timestamp || new Date(),
     });
+    delete log.user.password;
     return await this.historyRepository.save(log);
-  }
-
-  async findUserById(userId: string): Promise<User | undefined> {
-    return this.userRepository.findOne({ where: { id: userId } });
   }
 
   async findHistoriesByUserId(userId: string): Promise<History[]> {

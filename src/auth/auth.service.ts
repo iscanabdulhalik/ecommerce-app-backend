@@ -1,67 +1,70 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from 'src/modules/user/entities/user.entity';
 import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from 'src/modules/user/dto/login-user.dto';
 import { JwtPayload } from 'src/common/types/jwtPayload';
+import { UserService } from 'src/modules/user/user.service';
+import { WalletService } from 'src/modules/wallet/wallet.service';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Wallet)
-    private readonly walletRepository: Repository<Wallet>,
     private readonly jwtService: JwtService,
+    private readonly userService: UserService,
+    private readonly walletService: WalletService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<User> {
-    const { email, password } = createUserDto;
+    const { email } = createUserDto;
 
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
-    });
+    const existingUser = await this.userService.findUserByEmail(email);
     if (existingUser) {
       throw new BadRequestException('User with this email already exists');
     }
 
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
+    return await this.dataSource.transaction(async (manager) => {
+      const hashedPassword = await argon2.hash(createUserDto.password);
+      const userToSave = {
+        ...createUserDto,
+        password: hashedPassword,
+      };
 
-    const newUser = this.userRepository.create({
-      ...createUserDto,
-      password: hashedPassword,
+      const newUser = await manager.getRepository(User).save(userToSave);
+
+      if (!newUser) {
+        throw new BadRequestException('Failed to create user');
+      }
+
+      const walletToSave = {
+        user: newUser,
+        balance: 0,
+      };
+
+      const newWallet = await manager.getRepository(Wallet).save(walletToSave);
+
+      if (!newWallet) {
+        throw new BadRequestException('Failed to create wallet');
+      }
+
+      delete newUser.password;
+
+      return newUser;
     });
-
-    await this.userRepository.save(newUser);
-
-    const newWallet = this.walletRepository.create({
-      user: newUser,
-      balance: 0,
-    });
-
-    await this.walletRepository.save(newWallet);
-
-    return newUser;
   }
 
-  async loginWithCredentials(
-    loginUserDto: LoginUserDto,
-  ): Promise<{ access_token: string }> {
-    const user = await this.validateUser(
-      loginUserDto.email,
-      loginUserDto.password,
-    );
+  async loginWithCredentials(loginUserDto: LoginUserDto): Promise<{ access_token: string }> {
+    const user = await this.validateUser(loginUserDto.email, loginUserDto.password);
 
-    const wallet = await this.validateWallet(user);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials: User not found.');
+    }
+
+    const wallet = await this.validateWallet();
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -71,18 +74,35 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return null;
+    const user = await this.userService.findUserByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials: User not found.');
     }
 
-    return user;
+    try {
+      const isPasswordValid = await argon2.verify(user.password, password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials: Incorrect password.');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error during user validation:', error);
+      throw new UnauthorizedException('Invalid credentials');
+    }
   }
 
-  async validateWallet(user: User): Promise<Wallet> {
-    const userWallet = await this.walletRepository.findOne({
-      where: { user: { id: user.id } },
-    });
+  async validateWallet(): Promise<Wallet> {
+    if (!Wallet) {
+      throw new UnauthorizedException('Invalid credentials: Wallet not found.');
+    }
+    const userWallet = await this.walletService.findWalletByUserId();
+
+    if (!userWallet) {
+      throw new UnauthorizedException('Invalid credentials: Wallet not found.');
+    }
+
     return userWallet;
   }
 

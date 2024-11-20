@@ -86,8 +86,9 @@ mesela bunun yerine şöyle olmalı
       Logger.info(error);
       return badrequestexception ..  // yada burada bir sınıf yaratıp dönen error'ları genelleştirecek şekilde ayarlabilirsin 
     }
-  }
+  } 
 
 
 
-  
+
+  en son register olana addbalance yapıyor 

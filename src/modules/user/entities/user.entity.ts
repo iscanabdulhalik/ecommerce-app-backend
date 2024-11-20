@@ -11,6 +11,7 @@ import {
 import { Role } from '../../../common/enums/role.enum';
 import { Wallet } from 'src/modules/wallet/entities/wallet.entity';
 import { History } from 'src/modules/history/entities/history.entity';
+import { Product } from 'src/modules/product/entities/product.entity';
 
 @Entity()
 export class User {
@@ -20,7 +21,7 @@ export class User {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   surname: string;
 
   @Column({ unique: true })
@@ -36,11 +37,14 @@ export class User {
   })
   role: Role;
 
-  @OneToOne(() => Wallet, (wallet) => wallet.user, { cascade: true })
+  @OneToOne(() => Wallet, (wallet) => wallet.user, { cascade: true, onDelete: 'CASCADE' })
   wallet: Wallet;
 
-  @OneToMany(() => History, (history) => history.user)
+  @OneToMany(() => History, (history) => history.user, { onDelete: 'CASCADE' })
   history: History[];
+
+  @OneToMany(() => Product, (product) => product.user, { cascade: true })
+  products: Product[];
 
   @CreateDateColumn()
   created_at: Date;

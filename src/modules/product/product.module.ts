@@ -7,11 +7,15 @@ import { Wallet } from '../wallet/entities/wallet.entity';
 import { HistoryModule } from '../history/history.module';
 import { ProductRepository } from './product.repository';
 import { AuthModule } from 'src/auth/auth.module';
+import { WalletModule } from '../wallet/wallet.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, Wallet]),
-    HistoryModule,
+    forwardRef(() => UserModule),
+    forwardRef(() => WalletModule),
+    forwardRef(() => HistoryModule),
     forwardRef(() => AuthModule),
   ],
   controllers: [ProductController],

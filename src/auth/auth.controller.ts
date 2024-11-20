@@ -15,12 +15,12 @@ import { LoginUserDto } from 'src/modules/user/dto/login-user.dto';
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly userService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/register')
   async register(@Body() createUserDto: CreateUserDto) {
     try {
-      return await this.userService.register(createUserDto);
+      return await this.authService.register(createUserDto);
     } catch (error) {
       this.logger.error('Failed to register user', error.stack);
       throw new BadRequestException('Could not register user');
@@ -29,14 +29,11 @@ export class AuthController {
 
   @Post('/login')
   @HttpCode(200)
-  async login(@Body() loginUserDto: LoginUserDto): Promise<any> {
+  async login(@Body() loginUserDto: LoginUserDto): Promise<{ access_token: string }> {
     try {
-      return await this.userService.loginWithCredentials(loginUserDto);
+      return await this.authService.loginWithCredentials(loginUserDto);
     } catch (error) {
-      this.logger.error(
-        `Login failed for user: ${loginUserDto.email}`,
-        error.stack,
-      );
+      this.logger.error(`Login failed for user: ${loginUserDto.email}`, error.stack);
 
       throw new UnauthorizedException('Login failed. Invalid credentials.');
     }

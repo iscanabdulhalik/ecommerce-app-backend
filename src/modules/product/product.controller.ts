@@ -36,7 +36,7 @@ export class ProductController {
 
   @Post('/buy/:productId')
   @UseGuards(JwtAuthGuard)
-  async buyProduct(@Param('productId') productId: string, @Body() buyProductDto: BuyProductDto) {
+  async buyProduct(@Body() buyProductDto: BuyProductDto, @Param('productId') productId: string) {
     try {
       return await this.productService.buyProduct(productId, buyProductDto.quantity);
     } catch (error) {

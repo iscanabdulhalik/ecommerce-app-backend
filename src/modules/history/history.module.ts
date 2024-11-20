@@ -4,12 +4,12 @@ import { HistoryController } from './history.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { History } from './entities/history.entity';
 import { UserModule } from '../user/user.module';
-import { HistoryRepository } from './product.history';
+import { HistoryRepository } from './history.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([History]), forwardRef(() => UserModule)],
   controllers: [HistoryController],
   providers: [HistoryService, HistoryRepository],
-  exports: [HistoryService],
+  exports: [HistoryService, HistoryRepository],
 })
 export class HistoryModule {}

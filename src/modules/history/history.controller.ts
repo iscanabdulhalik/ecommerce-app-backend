@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  BadRequestException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { HistoryService } from './history.service';
 import { CreateHistoryDto } from './dto/create-history.dto';
 import { QueryHistoryDto } from './dto/query-history.dto';
@@ -22,9 +14,9 @@ export class HistoryController {
   @Post()
   async createHistory(@Body() createHistoryDto: CreateHistoryDto) {
     try {
-      const { userId, action, details } = createHistoryDto;
+      const { action, details } = createHistoryDto;
 
-      return await this.historyService.createLog(userId, action, details);
+      return await this.historyService.createLog(action, details);
     } catch (error) {
       throw new BadRequestException('Could not create history log');
     }
