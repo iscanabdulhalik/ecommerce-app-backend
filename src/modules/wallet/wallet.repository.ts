@@ -3,13 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
 import { CreateWalletDto } from './dto/create-wallet.dto';
-import { UserService } from '../user/user.service';
 import { REQUEST } from '@nestjs/core';
 
 @Injectable()
 export class WalletRepository {
   constructor(
-    private readonly userService: UserService,
     @InjectRepository(Wallet)
     private readonly walletRepository: Repository<Wallet>,
     @Inject(REQUEST) private readonly request: Request,
@@ -21,21 +19,6 @@ export class WalletRepository {
 
   private get walletId(): string {
     return this.request['user']['walletId'];
-  }
-
-  async createWallet(createWalletDto: CreateWalletDto): Promise<Wallet> {
-    const user = await this.userService.findOneById(createWalletDto.userId);
-    if (!user) {
-      console.error(`Failed to retrieve user with ID: ${createWalletDto.userId}`);
-      throw new NotFoundException(`User with ID "${createWalletDto.userId}" not found`);
-    }
-
-    const wallet = this.walletRepository.create({
-      balance: createWalletDto.balance,
-      user: user,
-    });
-
-    return await this.walletRepository.save(wallet);
   }
 
   async findAllWithUserRelation() {
@@ -55,8 +38,8 @@ export class WalletRepository {
     });
   }
 
-  async saveWallet(wallet: Wallet) {
-    await this.walletRepository.save(wallet);
+  async saveWallet(wallet: Wallet): Promise<Wallet> {
+    return await this.walletRepository.save(wallet);
   }
 
   async findWalletByUserId(): Promise<Wallet> {
@@ -64,5 +47,13 @@ export class WalletRepository {
       where: { user: { id: this.userId } },
     });
     return wallet;
+  }
+
+  async createWallet(createWalletDto: CreateWalletDto): Promise<Wallet> {
+    const wallet = this.walletRepository.create({
+      ...createWalletDto,
+      user: { id: this.userId },
+    });
+    return this.walletRepository.save(wallet);
   }
 }

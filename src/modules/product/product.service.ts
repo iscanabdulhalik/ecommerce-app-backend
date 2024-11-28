@@ -53,15 +53,36 @@ export class ProductService {
     try {
       const user = await this.userService.findOneById(this.userId);
       console.log(user);
-      await this.productRepository.buyProduct(id, quantity);
-      const product = await this.productRepository.findProductById(id);
-      const wallet = await this.walletService.findWalletByUserId();
-      await this.historyService.createLog('PRODUCT', {
-        action: 'buy',
-        details: `${user.name} id->(${user.id}) bought ${quantity} ${product.name} for ${product.price} lira each`,
-        date: new Date(),
-      });
-      return { product, wallet };
+      try {
+        const product = await this.findProductById(id);
+        if (!product) {
+          throw new BadRequestException('Product not found');
+        }
+        const wallet = await this.walletService.findWalletByUserId();
+        if (!wallet) {
+          throw new BadRequestException('Wallet not found for this user.');
+        }
+        const totalCost = product.price * quantity;
+
+        if (wallet.balance < totalCost) {
+          throw new BadRequestException('Insufficient balance');
+        }
+
+        if (product.stock < quantity) {
+          throw new BadRequestException('Not enough stock available');
+        }
+
+        wallet.balance -= totalCost;
+        product.stock -= quantity;
+
+        await this.walletService.saveWallet(wallet);
+        await this.productRepository.saveProduct(product);
+
+        return product;
+      } catch (error) {
+        console.error('Error:', error);
+        throw new BadRequestException('Could not process purchase');
+      }
     } catch (error) {
       console.log(error.message);
       throw new BadRequestException(error.message);

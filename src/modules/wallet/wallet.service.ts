@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import { WalletRepository } from './wallet.repository';
 import { HistoryService } from '../history/history.service';
 import { REQUEST } from '@nestjs/core';
 import { Wallet } from './entities/wallet.entity';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { UserService } from '../user/user.service';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class WalletService {
@@ -85,7 +86,20 @@ export class WalletService {
   }
 
   async createWallet(createWalletDto: CreateWalletDto): Promise<Wallet> {
-    const wallet = await this.walletRepository.createWallet(createWalletDto);
-    return wallet;
+    try {
+      const user = await this.userService.findOneById(createWalletDto.userId);
+      if (!user) {
+        console.error(`Failed to retrieve user with ID: ${createWalletDto.userId}`);
+        throw new NotFoundException(`User with ID "${createWalletDto.userId}" not found`);
+      }
+
+      const wallet = this.walletRepository.createWallet(createWalletDto);
+
+      const savedWallet = await this.walletRepository.saveWallet(await wallet);
+      return savedWallet;
+    } catch (error) {
+      console.error('Error:', error);
+      throw new BadRequestException('Could not create wallet');
+    }
   }
 }
